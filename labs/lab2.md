@@ -16,7 +16,7 @@ I think relational tables are more suitable for my datasets. As Kleppmann explai
 **Checklist before you submit**
 
 - [x] `notebooks/lab2_joins.ipynb`: Part A run in class, Part B completed with your own tables
-- [ ] Every Part B text cell filled in (grain, unmatched rows, what the result tells you)
-- [ ] This file answered
+- [x] Every Part B text cell filled in (grain, unmatched rows, what the result tells you)
+- [x] This file answered
 - [ ] Notebook saved (Cmd+S), then committed and pushed
 - [ ] Repo URL submitted on CourseWorks
