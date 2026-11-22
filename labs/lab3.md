@@ -72,6 +72,6 @@ Your token is a password. It goes in a Codespaces secret, **never** in a noteboo
 
 - [x] `notebooks/lab3_live_data.ipynb`: Part A run in class; Part B completed with your own API (two or more pages, five checks with a why for each, written to MotherDuck)
 - [x] This file answered, including the project dataset choice
-- [ ] No token anywhere in your files: tokens start with `eyJ`, so search your repo (Cmd+Shift+F) for `eyJ`
-- [ ] Notebook saved (Cmd+S), then committed and pushed
-- [ ] Repo URL submitted on CourseWorks
+- [x] No token anywhere in your files: tokens start with `eyJ`, so search your repo (Cmd+Shift+F) for `eyJ`
+- [x] Notebook saved (Cmd+S), then committed and pushed
+- [x] Repo URL submitted on CourseWorks
