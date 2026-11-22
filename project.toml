@@ -19,7 +19,7 @@ keep_as_text = ["work_permit", "bin", "community_board"]
 # For the course pipeline test, use a rolling one-year sample.
 # This excludes undated permits and does NOT measure long-standing sheds.
 date_column = "issued_date"
-days_back = 365
+days_back = 30
 max_rows = 5000  # safety cap; not a full download
 
 # 1. Completeness: required identifying fields are present.
