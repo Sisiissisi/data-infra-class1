@@ -1,0 +1,166 @@
+# Manhattan sidewalk shed permits — Lab 3 / Lab 4 project settings.
+# Based on DOB NOW: Build – Approved Permits (NYC Open Data, rbx6-tga4).
+# Caution: one record is a permit record, not a physical shed.
+# An exact duplicate row is removed in the clean table; different issue dates are kept.
+
+[project]
+name = "manhattan_sidewalk_sheds"
+
+[source]
+type = "socrata"
+url = "https://data.cityofnewyork.us/resource/rbx6-tga4.json"
+columns = [
+  "work_permit", "sequence_number", "filing_reason", "work_type",
+  "borough", "bin", "community_board", "issued_date",
+  "expired_date", "permit_status"
+]
+filter = "upper(borough) = 'MANHATTAN' AND work_type = 'Sidewalk Shed'"
+keep_as_text = ["work_permit", "bin", "community_board"]
+# For the course pipeline test, use a rolling one-year sample.
+# This excludes undated permits and does NOT measure long-standing sheds.
+date_column = "issued_date"
+days_back = 365
+max_rows = 5000  # safety cap; not a full download
+
+# 1. Completeness: required identifying fields are present.
+[[checks]]
+name = "required fields present"
+why = "missing permit identifiers make records impossible to trace"
+sql = """
+SELECT count(*) FROM raw
+WHERE work_permit IS NULL OR trim(work_permit) = ''
+   OR sequence_number IS NULL
+   OR borough IS NULL OR work_type IS NULL
+"""
+
+# 2. Keys: identical rows are allowed in raw because we remove exact copies
+#    during transformation. DIFFERENT records must not share the same
+#    work_permit + sequence_number + issued_date key.
+[[checks]]
+name = "record keys unique after exact-row deduplication"
+why = "different records with the same key could double count permit activity"
+sql = """
+SELECT count(*) FROM (
+  SELECT work_permit, sequence_number, issued_date, count(*) AS n
+  FROM (SELECT DISTINCT * FROM raw)
+  GROUP BY work_permit, sequence_number, issued_date
+  HAVING n > 1 OR work_permit IS NULL
+     OR sequence_number IS NULL OR issued_date IS NULL
+)
+"""
+
+# 3. Validity: date order and sequence numbers are plausible.
+[[checks]]
+name = "permit dates and sequence numbers valid"
+why = "invalid dates or sequences would distort age and renewal analysis"
+sql = """
+SELECT count(*) FROM raw
+WHERE try_cast(sequence_number AS BIGINT) IS NULL
+   OR try_cast(sequence_number AS BIGINT) < 1
+   OR (issued_date IS NOT NULL AND try_cast(issued_date AS TIMESTAMP) IS NULL)
+   OR (expired_date IS NOT NULL AND try_cast(expired_date AS TIMESTAMP) IS NULL)
+   OR try_cast(expired_date AS TIMESTAMP) < try_cast(issued_date AS TIMESTAMP)
+"""
+
+# 4. Allowed values: the study covers one borough and one work type.
+[[checks]]
+name = "Manhattan sidewalk shed records only"
+why = "other boroughs and work types would bias district comparisons"
+sql = """
+SELECT count(*) FROM raw
+WHERE coalesce(upper(trim(borough)), '') <> 'MANHATTAN'
+   OR coalesce(trim(work_type), '') <> 'Sidewalk Shed'
+"""
+
+# 5. Freshness: the extracted batch includes a recent issued permit.
+[[checks]]
+name = "an issued permit within the past 30 days"
+why = "outdated extracts would miss recent permits and changes"
+sql = """
+SELECT CASE
+  WHEN max(try_cast(issued_date AS TIMESTAMP)) >= CURRENT_DATE - INTERVAL '30 days'
+  THEN 0 ELSE 1 END
+FROM raw
+"""
+
+# (a) Clean records: remove only rows that are identical in every field.
+[[tables]]
+name = "shed_permits_clean"
+sql = """
+SELECT DISTINCT
+  trim(work_permit) AS work_permit,
+  try_cast(sequence_number AS BIGINT) AS sequence_number,
+  filing_reason, work_type, borough,
+  bin, community_board,
+  try_cast(issued_date AS TIMESTAMP) AS issued_date,
+  try_cast(expired_date AS TIMESTAMP) AS expired_date,
+  permit_status
+FROM raw
+"""
+
+# (b) Time trend: permit records by month of issuance.
+[[tables]]
+name = "shed_by_month"
+sql = """
+SELECT
+  date_trunc('month', issued_date)::DATE AS issued_month,
+  count(*) AS permit_records,
+  count(DISTINCT bin) AS distinct_buildings
+FROM shed_permits_clean
+WHERE issued_date IS NOT NULL
+GROUP BY issued_month
+ORDER BY issued_month
+"""
+
+# (c) District summary: issue age is NOT the age of the physical shed.
+[[tables]]
+name = "shed_by_district"
+sql = """
+SELECT
+  community_board,
+  count(*) AS permit_records,
+  count(DISTINCT bin) AS distinct_buildings,
+  count(DISTINCT work_permit) AS distinct_permit_numbers,
+  count(*) FILTER (WHERE lower(coalesce(filing_reason, '')) LIKE '%renewal%') AS renewal_records,
+  round(median(date_diff('day', issued_date::DATE, CURRENT_DATE)), 1) AS median_days_since_issue
+FROM shed_permits_clean
+WHERE community_board IS NOT NULL
+GROUP BY community_board
+ORDER BY permit_records DESC
+"""
+
+# (d) Ranking: districts with the most permit records (not shed counts).
+[[tables]]
+name = "shed_top_districts"
+sql = """
+SELECT community_board, permit_records, distinct_buildings,
+       renewal_records, median_days_since_issue
+FROM shed_by_district
+ORDER BY permit_records DESC
+LIMIT 10
+"""
+
+# Optional questions answered in the pipeline log.
+[[report]]
+question = "Which Manhattan community boards have the most sidewalk shed permit records?"
+sql = """
+SELECT community_board, permit_records, distinct_buildings
+FROM shed_top_districts
+ORDER BY permit_records DESC LIMIT 5
+"""
+
+[[report]]
+question = "How many permit records are renewals in each community board?"
+sql = """
+SELECT community_board, renewal_records, permit_records
+FROM shed_by_district
+ORDER BY renewal_records DESC LIMIT 5
+"""
+
+[[report]]
+question = "How many permit records were issued each month recently?"
+sql = """
+SELECT issued_month, permit_records
+FROM shed_by_month
+ORDER BY issued_month DESC LIMIT 6
+"""

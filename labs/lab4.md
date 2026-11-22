@@ -5,9 +5,9 @@
 
 ## Links
 
-**A successful run of your pipeline** (Actions tab → the green run → copy the address):https://github.com/Sisiissisi/data-infra-class1/actions/runs/45069348222
+**A successful run of your pipeline** (Actions tab → the green run → copy the address):https://github.com/Sisiissisi/data-infra-class1/actions/runs/45072152464
 
-**A deliberately failed run** (Run workflow with "Break the data on purpose" ticked → the red run → copy the address):https://github.com/Sisiissisi/data-infra-class1/actions/runs/45069759242
+**A deliberately failed run** (Run workflow with "Break the data on purpose" ticked → the red run → copy the address):https://github.com/Sisiissisi/data-infra-class1/actions/runs/45072229974
 
 **Your table on MotherDuck:** `course.main.manhattan_sidewalk_sheds`
 
@@ -47,10 +47,10 @@ If a token ever leaks, delete it in MotherDuck right away and make a new one (th
 
 **Checklist before you submit**
 
-- [ ] `project.toml` points to **your** API, with at least five checks of your own (each with a why) and at least three tables: one clean table and at least two analysis tables (trend, key metrics or ranking)
-- [ ] `docs/findings.md`: three findings, each backed by one of your tables
-- [ ] A green run and a red run on the Actions tab, both linked above
-- [ ] `docs/data_dictionary.md` filled in for every table you publish
-- [ ] This file answered
-- [ ] No token anywhere in your files (tokens start with `eyJ`: search your repo with Cmd+Shift+F)
-- [ ] Committed and pushed; repo URL submitted on CourseWorks
+- [x] `project.toml` points to **your** API, with at least five checks of your own (each with a why) and at least three tables: one clean table and at least two analysis tables (trend, key metrics or ranking)
+- [x] `docs/findings.md`: three findings, each backed by one of your tables
+- [x] A green run and a red run on the Actions tab, both linked above
+- [x] `docs/data_dictionary.md` filled in for every table you publish
+- [x] This file answered
+- [x] No token anywhere in your files (tokens start with `eyJ`: search your repo with Cmd+Shift+F)
+- [x] Committed and pushed; repo URL submitted on CourseWorks
