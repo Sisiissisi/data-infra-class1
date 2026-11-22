@@ -12,7 +12,8 @@ Manhattan Community Board 108 has the highest number of sidewalk shed permit rec
 
 **The query or row that shows it:**
 
-```SELECT
+```
+SELECT
     community_board,
     permit_records,
     distinct_buildings
@@ -34,7 +35,8 @@ Community Board 108 has 138 renewal records out of 165 total permit records. Thi
 
 **The query or row that shows it:**
 
-```SELECT
+```
+SELECT
     community_board,
     renewal_records,
     permit_records
@@ -56,7 +58,8 @@ The dataset contains 741 sidewalk shed permit records issued in November 2026 an
 
 **The query or row that shows it:**
 
-```SELECT
+```
+SELECT
     issued_month,
     permit_records
 FROM course.main.shed_by_month
