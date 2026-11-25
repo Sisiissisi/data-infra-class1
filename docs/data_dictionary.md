@@ -1,182 +1,92 @@
-# Data dictionary
+# Data dictionary · EXAMPLE (NYC 311 heat complaints, class demo)
 
-This file describes the tables your pipeline publishes. Copy the Columns section once per table. In Session 5, an AI model will read it to write SQL
-against your data, so a clear description here means better answers there. Write it for a
-smart reader who has never seen your data.
+<!-- A filled-in version of data_dictionary.md. Example values are illustrative. -->
 
-## The table 1
+## Part 1 · About the project
 
-**Table name on MotherDuck:** ` course.main.shed_permits_clean`
+**Project:** Heat and hot water complaints made to NYC 311 in the last 7 days, by borough and ZIP code.
 
-**One row is:** (the grain, e.g. "one country in one year")
-One distinct sidewalk shed permit record in Manhattan, including initial permits and renewals. One record does not necessarily represent one physical sidewalk shed.
+**Source:** NYC Open Data, 311 Service Requests (dataset erm2-nwe9), https://data.cityofnewyork.us/resource/erm2-nwe9.json
 
-**Source:** (API name and link to its documentation)
-NYC Open Data — DOB NOW: Build – Approved Permits.
-Dataset: https://data.cityofnewyork.us/d/rbx6-tga4
-API documentation: https://dev.socrata.com/docs/endpoint
+**Refreshed:** Daily at about 6 AM New York time by GitHub Actions. Each run replaces every table with the last 7 days of complaints, so older days drop off.
 
-**Refreshed:** (e.g. "daily at 6 AM New York time by GitHub Actions; a full snapshot of the last 14 days")
-The pipeline is scheduled to run daily through GitHub Actions and can also be run manually. The current configuration collects records issued within the past 30 days.
+**Removed on purpose:** Complaints with borough "UNSPECIFIED", because they can't be placed in a borough. Only complaint type "HEAT/HOT WATER" is kept.
 
-**Removed on purpose:** (rows the pipeline drops, and why, e.g. "regions like 'World', so averages count countries only")
-Records outside Manhattan, records that are not sidewalk shed permits, and records outside the selected time period are excluded. Exact duplicate records are removed to avoid double counting.
+---
 
-## Columns
+## Part 2 · The tables
 
+### Table 1: `course.main.heat_complaints`
 
-| Column | Type | What it means | Units or allowed values | Example |
-|---|---|---|---|---|
-| work_permit | VARCHAR | Permit identifier | Text | M01412019-S1-SH |
-| sequence_number | BIGINT | Sequence number associated with a permit record | Integer | 1 |
-| filing_reason | VARCHAR | Reason for the permit filing | Initial Permit, Renewal, etc. | Initial Permit |
-| work_type | VARCHAR | Type of construction work | Sidewalk Shed | Sidewalk Shed |
-| borough | VARCHAR | Borough where the permit is located | Manhattan | Manhattan |
-| bin | VARCHAR | Building Identification Number | Building code | 1084726 |
-| community_board | VARCHAR | Community Board identifier | Board code | 108 |
-| issued_date | TIMESTAMP | Date when the permit was issued | Date and time | 2026-11-20 |
-| expired_date | TIMESTAMP | Date when the permit expires | Date and time | 2027-01-01 |
-| permit_status | VARCHAR | Status of the permit | Status category | Permit Issued |
+**What it is:** The clean table
 
-## What this data can't tell you
+**One row is:** one complaint
 
-(2–3 limits: years not covered, places missing, how values are estimated, anything a user might wrongly assume)
-First, the dataset contains permit records rather than the exact number of physical sidewalk sheds. A single shed may have multiple permits or renewals.
-Second, the current pipeline only collects records from the past 30 days, so it cannot show the complete permit history.
-Third, the permit status does not independently confirm whether a sidewalk shed is currently installed.
-
-## Example questions it can answer
-
-1.How many sidewalk shed permit records were issued in Manhattan during the selected period?
-2.How many records are initial permits and how many are renewals?
-3.What are the issue and expiration dates of different permit records?
-
-## The table 2
-
-**Table name on MotherDuck:** ` course.main.shed_by_district`
-
-**One row is:** (the grain, e.g. "one country in one year")
-One Manhattan Community Board with summarized sidewalk shed permit information.
-
-**Source:** (API name and link to its documentation)
-NYC Open Data — DOB NOW: Build – Approved Permits, summarized from shed_permits_clean.
-Dataset: https://data.cityofnewyork.us/d/rbx6-tga4
-API documentation: https://dev.socrata.com/docs/endpoints
-
-**Refreshed:** (e.g. "daily at 6 AM New York time by GitHub Actions; a full snapshot of the last 14 days")
-The pipeline is scheduled to run daily through GitHub Actions and can also run manually. The current table summarizes permit records from the past 30 days.
-
-**Removed on purpose:** (rows the pipeline drops, and why, e.g. "regions like 'World', so averages count countries only")
-Records without Community Board information are excluded from this summary because they cannot be assigned to a district. Exact duplicate records have already been removed from the clean table.
-
-
-## Columns
+**Built from:** raw
 
 | Column | Type | What it means | Units or allowed values | Example |
 |---|---|---|---|---|
-| community_board | VARCHAR | Community Board identifier | Board code | 108 |
-| permit_records | BIGINT | Total number of permit records in the board | Records | 165 |
-| distinct_buildings | BIGINT | Number of distinct buildings identified by BIN | Buildings | 152 |
-| distinct_permit_numbers | BIGINT | Number of distinct work permit identifiers | Permits | Nonnegative integer |
-| renewal_records | BIGINT | Number of permit records identified as renewals | Records | 138 |
-| median_days_since_issue | DOUBLE | Median number of days since permit issuance | Days | Numeric value |
+| unique_key | text | The city's ID for the complaint | unique; never repeated | 63012345 |
+| created_date | timestamp | When the complaint was made | New York time | 2026-11-15 21:42:00 |
+| created_day | date | The day the complaint was made | date only | 2026-11-15 |
+| borough | text | Borough of the building | BRONX, BROOKLYN, MANHATTAN, QUEENS, STATEN ISLAND | BRONX |
+| incident_zip | text | ZIP code of the building | 5 digits; can be empty | 10467 |
 
+### Table 2: `course.main.heat_by_borough_day`
 
+**What it is:** A trend
 
-## What this data can't tell you
+**One row is:** one borough on one day
 
-(2–3 limits: years not covered, places missing, how values are estimated, anything a user might wrongly assume)
-First, the table counts permit records, not physical sidewalk sheds. Multiple permit records may refer to the same structure.
-Second, the median days since issue measures the time since the recorded permit was issued, not how long a sidewalk shed has remained installed.
-Third, the table only uses recent data, so it cannot describe the full history of sidewalk sheds in each Community Board.
-
-
-
-## Example questions it can answer
-
-1.Which Manhattan Community Board has the most sidewalk shed permit records?
-2.How many renewal permit records are there in each Community Board?
-3.How does the median time since permit issuance differ across Community Boards?
-
-
-## The table 3
-
-**Table name on MotherDuck:** ` course.main.shed_by_month`
-
-**One row is:** (the grain, e.g. "one country in one year")
-One month of sidewalk shed permit issuance in Manhattan.
-
-**Source:** (API name and link to its documentation)
-NYC Open Data — DOB NOW: Build – Approved Permits, summarized from shed_permits_clean.
-Dataset: https://data.cityofnewyork.us/d/rbx6-tga4
-API documentation: https://dev.socrata.com/docs/endpoints
-
-**Refreshed:** (e.g. "daily at 6 AM New York time by GitHub Actions; a full snapshot of the last 14 days")
-The pipeline is scheduled to run daily through GitHub Actions. The table summarizes permits from the current 30-day data window.
-
-**Removed on purpose:** (rows the pipeline drops, and why, e.g. "regions like 'World', so averages count countries only")
-Records without an issue date are excluded because they cannot be assigned to a month. Exact duplicate records have already been removed from the clean table.
-
-## Columns
+**Built from:** heat_complaints
 
 | Column | Type | What it means | Units or allowed values | Example |
 |---|---|---|---|---|
-| issued_month | DATE | Month when the permits were issued | Month | 2026-11-01 |
-| permit_records | BIGINT | Number of permit records issued during the month | Records | 741 |
-| distinct_buildings | BIGINT | Number of distinct buildings identified by BIN | Buildings | Nonnegative integer |
+| borough | text | Borough | the five boroughs | BROOKLYN |
+| created_day | date | Day | last 7 days | 2026-11-15 |
+| complaints | integer | Heat complaints in that borough that day | count | 412 |
 
+### Table 3: `course.main.heat_borough_summary`
 
-## What this data can't tell you
+**What it is:** Key metrics
 
-(2–3 limits: years not covered, places missing, how values are estimated, anything a user might wrongly assume)
-First, the table only covers the selected 30-day period, so it cannot show long-term trends in sidewalk shed permits.
-Second, the first and last months may be incomplete because the data window does not cover full calendar months.
-Third, the number of permit records does not represent the number of physical sidewalk sheds installed during each month.
+**One row is:** one borough, over the last 7 days
 
-## Example questions it can answer
-
-1.How many sidewalk shed permit records were issued each month?
-2.Which month has the most permit records within the available data?
-3.How many distinct buildings have permit records in each month?
-
-## The table 4
-
-**Table name on MotherDuck:** ` course.main.shed_top_districts`
-
-**One row is:** (the grain, e.g. "one country in one year")
-One of the 10 Manhattan Community Boards with the highest number of sidewalk shed permit records.
-
-**Source:** (API name and link to its documentation)
-NYC Open Data — DOB NOW: Build – Approved Permits, summarized from shed_by_district.
-Dataset: https://data.cityofnewyork.us/d/rbx6-tga4
-API documentation: https://dev.socrata.com/docs/endpoints
-
-**Refreshed:** (e.g. "daily at 6 AM New York time by GitHub Actions; a full snapshot of the last 14 days")
-The pipeline is scheduled to run daily through GitHub Actions. The ranking is updated when the pipeline successfully processes new data.
-
-**Removed on purpose:** (rows the pipeline drops, and why, e.g. "regions like 'World', so averages count countries only")
-Community Boards outside the top 10 are excluded because this table is designed to show the ranking. Records without Community Board information were already excluded from the district summary.
-
-## Columns
+**Built from:** heat_complaints
 
 | Column | Type | What it means | Units or allowed values | Example |
 |---|---|---|---|---|
-| community_board | VARCHAR | Community Board identifier | Board code | 108 |
-| permit_records | BIGINT | Number of permit records | Records | 165 |
-| distinct_buildings | BIGINT | Number of distinct buildings by BIN | Buildings | 152 |
-| renewal_records | BIGINT | Number of renewal records | Records | 138 |
-| median_days_since_issue | DOUBLE | Median number of days since permit issuance | Days | Numeric value |
+| borough | text | Borough | the five boroughs | BRONX |
+| total_complaints | integer | All heat complaints in the 7 days | count | 3,420 |
+| avg_per_day | number | Average complaints per day | count per day, 1 decimal | 488.6 |
+| pct_of_city | number | This borough's share of all complaints in the city | percent, 0–100; the five add to 100 | 31.4 |
+| zip_codes_affected | integer | ZIP codes with at least one complaint | count | 25 |
 
+### Table 4: `course.main.heat_top_zips`
 
-## What this data can't tell you
+**What it is:** A ranking
 
-(2–3 limits: years not covered, places missing, how values are estimated, anything a user might wrongly assume)
-First, the ranking is based on permit records, not the actual number of physical sidewalk sheds.
-Second, the table only includes the top 10 Community Boards, so it does not show the complete distribution across Manhattan.
-Third, the ranking is based on recent permit records and cannot tell us which Community Boards have the most long-standing sidewalk sheds.
+**One row is:** one ZIP code (top 20 only)
 
-## Example questions it can answer
+**Built from:** heat_complaints
 
-1.Which 10 Manhattan Community Boards have the most sidewalk shed permit records?
-2.Which Community Board has the most renewal permit records among the top 10?
-3.How many distinct buildings have sidewalk shed permit records in each of the top 10 Community Boards?
+| Column | Type | What it means | Units or allowed values | Example |
+|---|---|---|---|---|
+| incident_zip | text | ZIP code | 5 digits | 10467 |
+| borough | text | Borough the ZIP is in | the five boroughs | BRONX |
+| complaints | integer | Heat complaints in that ZIP in the 7 days | count | 298 |
+
+---
+
+## Part 3 · What this data can't tell you
+
+1. Only the last 7 days. It can't show last winter or compare years.
+2. A complaint is a call, not a confirmed problem. Several tenants in one building can complain about the same outage.
+3. Counts aren't adjusted for population or number of buildings, so bigger boroughs will naturally have more.
+
+## Part 4 · Example questions it can answer
+
+1. Which borough had the most heat complaints this week? (heat_borough_summary)
+2. What share of complaints came from the Bronx? (heat_borough_summary)
+3. Which five ZIP codes were hardest hit? (heat_top_zips)
+4. Were complaints rising or falling over the week in Brooklyn? (heat_by_borough_day)
