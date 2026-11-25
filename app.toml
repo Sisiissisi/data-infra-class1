@@ -38,4 +38,7 @@ Distinguish initial permits from renewal permits using the filing reason.
 Use the issued date when analyzing permit issuance over time.
 Do not assume that each permit represents a unique sidewalk shed.
 Calculate percentages using the appropriate total number of records.
+When calculating the overall percentage of renewal permit records,
+use SUM(renewal_records) divided by SUM(permit_records)
+from course.main.shed_by_district, multiplied by 100.
 """
