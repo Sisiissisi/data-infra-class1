@@ -1,0 +1,41 @@
+# =============================================================================
+#  app.toml · YOUR APP SETTINGS
+#  This is the only app file you edit. app.py reads it and does the rest.
+#  Same rules as project.toml: text in "quotes", lists in [brackets], # for notes.
+#
+#  The app also reads two files you already have:
+#   - project.toml               to know which tables your pipeline publishes
+#   - docs/data_dictionary.md    to know what every column means
+#  A clearer data dictionary means better answers. That's the whole lesson.
+# =============================================================================
+
+# What people see at the top of your app
+title = "NYC Sidewalk Shed Permit Explorer"
+
+description = "Explore the distribution and characteristics of sidewalk shed permits across New York City."
+
+# Questions your app answers well
+examples = [
+    "Which borough has the most sidewalk shed permits?",
+    "Which five community districts have the most sidewalk shed permits?",
+    "What percentage of permits are renewal permits?",
+    "How many sidewalk shed permits are issued each month?",
+]
+
+# The AI model. Free-tier Gemini models as of November 2026 (Google changes limits often):
+#   "gemini-3.5-flash-lite"  roughly 15 questions a minute, a few hundred a day (default)
+#   "gemini-3.8-flash"       smarter, but only a handful a minute and about 20 a day
+# If a model stops working, the app tries the next one in this list.
+models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.8-flash"]
+
+# Guardrail: the most rows any answer can return
+max_rows = 200
+
+# Optional: extra instructions for the AI, in plain English.
+extra_instructions = """
+Use the data dictionary to understand table and column definitions.
+Distinguish initial permits from renewal permits using the filing reason.
+Use the issued date when analyzing permit issuance over time.
+Do not assume that each permit represents a unique sidewalk shed.
+Calculate percentages using the appropriate total number of records.
+"""
